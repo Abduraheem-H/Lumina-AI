@@ -1,16 +1,14 @@
 import React from 'react';
+import { Sidebar } from './components/Sidebar';
 
 export default function App() {
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <h1 className="logo">Lumina</h1>
-        <p className="sidebar-note">Chat history coming soon.</p>
-      </aside>
+      <Sidebar />
       <main className="main">
         <header className="header">New Chat</header>
         <section className="content">
-          <p>Start by typing a message.</p>
+          <p>Start by sending a message.</p>
         </section>
       </main>
     </div>

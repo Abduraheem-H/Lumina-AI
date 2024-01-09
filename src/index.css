@@ -22,17 +22,35 @@ body {
   border-right: 1px solid #e5e7eb;
   padding: 24px;
   background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .logo {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 20px;
 }
 
-.sidebar-note {
+.ghost-button {
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #111827;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.sidebar-empty {
   color: #6b7280;
   font-size: 13px;
-  margin: 0;
 }
 
 .main {
