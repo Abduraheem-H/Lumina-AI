@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChatInput } from './ChatInput';
 
 export const ChatWindow = () => {
   return (
@@ -7,6 +8,9 @@ export const ChatWindow = () => {
       <section className="content">
         <p>Start by sending a message.</p>
       </section>
+      <footer className="footer">
+        <ChatInput />
+      </footer>
     </div>
   );
 };
