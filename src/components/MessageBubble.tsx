@@ -1,15 +1,17 @@
 import React from 'react';
+import { Message } from '../types/chat';
 
 interface MessageBubbleProps {
-  author: 'user' | 'assistant';
-  text: string;
+  message: Message;
 }
 
-export const MessageBubble = ({ author, text }: MessageBubbleProps) => {
+export const MessageBubble = ({ message }: MessageBubbleProps) => {
+  const isUser = message.role === 'user';
+
   return (
-    <div className={`message ${author}`}>
-      <div className="message-label">{author === 'user' ? 'You' : 'Lumina'}</div>
-      <div className="message-text">{text}</div>
+    <div className={`message ${isUser ? 'user' : 'assistant'}`}>
+      <div className="message-label">{isUser ? 'You' : 'Lumina'}</div>
+      <div className="message-text">{message.content}</div>
     </div>
   );
 };
