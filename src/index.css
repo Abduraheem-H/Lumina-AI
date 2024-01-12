@@ -72,6 +72,33 @@ body {
   color: #6b7280;
 }
 
+.content.messages {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 24px;
+  gap: 16px;
+  color: #111827;
+}
+
+.message {
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #f3f4f6;
+}
+
+.message.user {
+  background: #111827;
+  color: white;
+  align-self: flex-end;
+}
+
+.message-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
 .footer {
   padding: 16px 24px;
   border-top: 1px solid #e5e7eb;
