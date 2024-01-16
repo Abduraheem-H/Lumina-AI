@@ -1,34 +1,34 @@
 import React from 'react';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
-import { Message } from '../types/chat';
-
-const sampleMessages: Message[] = [
-  {
-    id: '1',
-    role: 'assistant',
-    content: 'Hi there! Ask me anything.',
-    timestamp: Date.now(),
-  },
-  {
-    id: '2',
-    role: 'user',
-    content: 'What can you help with?',
-    timestamp: Date.now(),
-  },
-];
+import { useChatStore } from '../store/useChatStore';
 
 export const ChatWindow = () => {
+  const { messages, addMessage } = useChatStore();
+
+  const handleSend = (content: string) => {
+    addMessage({
+      id: crypto.randomUUID(),
+      role: 'user',
+      content,
+      timestamp: Date.now(),
+    });
+  };
+
   return (
     <div className="main">
       <header className="header">New Chat</header>
       <section className="content messages">
-        {sampleMessages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
-        ))}
+        {messages.length === 0 ? (
+          <p>Start by sending a message.</p>
+        ) : (
+          messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))
+        )}
       </section>
       <footer className="footer">
-        <ChatInput />
+        <ChatInput onSend={handleSend} />
       </footer>
     </div>
   );

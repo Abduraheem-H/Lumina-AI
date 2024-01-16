@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 interface ChatInputProps {
-  onSend?: (message: string) => void;
+  onSend: (message: string) => void;
 }
 
 export const ChatInput = ({ onSend }: ChatInputProps) => {
@@ -9,7 +9,7 @@ export const ChatInput = ({ onSend }: ChatInputProps) => {
 
   const handleSend = () => {
     if (value.trim()) {
-      onSend?.(value.trim());
+      onSend(value.trim());
       setValue('');
     }
   };
