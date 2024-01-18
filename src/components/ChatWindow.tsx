@@ -4,10 +4,13 @@ import { MessageBubble } from './MessageBubble';
 import { useChatStore } from '../store/useChatStore';
 
 export const ChatWindow = () => {
-  const { messages, addMessage } = useChatStore();
+  const { sessions, currentSessionId, addMessage, createNewSession } = useChatStore();
+  const currentSession = sessions.find((session) => session.id === currentSessionId);
 
   const handleSend = (content: string) => {
-    addMessage({
+    const sessionId = currentSessionId ?? createNewSession();
+
+    addMessage(sessionId, {
       id: crypto.randomUUID(),
       role: 'user',
       content,
@@ -17,12 +20,12 @@ export const ChatWindow = () => {
 
   return (
     <div className="main">
-      <header className="header">New Chat</header>
+      <header className="header">{currentSession?.title ?? 'New Chat'}</header>
       <section className="content messages">
-        {messages.length === 0 ? (
+        {!currentSession || currentSession.messages.length === 0 ? (
           <p>Start by sending a message.</p>
         ) : (
-          messages.map((message) => (
+          currentSession.messages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))
         )}
