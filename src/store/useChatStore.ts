@@ -40,6 +40,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
               ...session,
               messages: [...session.messages, message],
               updatedAt: Date.now(),
+              title:
+                session.messages.length === 0 && message.role === 'user'
+                  ? `${message.content.slice(0, 30)}${
+                      message.content.length > 30 ? '...' : ''
+                    }`
+                  : session.title,
             }
           : session,
       ),
