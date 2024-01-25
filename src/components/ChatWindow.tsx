@@ -1,15 +1,43 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
 import { useChatStore } from '../store/useChatStore';
 import { generateChatResponse } from '../services/gemini';
+import { useMutation } from '@tanstack/react-query';
 
 export const ChatWindow = () => {
   const { sessions, currentSessionId, addMessage, createNewSession } = useChatStore();
   const currentSession = sessions.find((session) => session.id === currentSessionId);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSend = async (content: string) => {
+  const mutation = useMutation({
+    mutationFn: async (messages: any[]) => generateChatResponse(messages),
+    onSuccess: (response) => {
+      if (!currentSessionId) {
+        return;
+      }
+
+      addMessage(currentSessionId, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: response,
+        timestamp: Date.now(),
+      });
+    },
+    onError: (error: any) => {
+      if (!currentSessionId) {
+        return;
+      }
+
+      addMessage(currentSessionId, {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Error: ${error.message ?? 'Unable to fetch response.'}`,
+        timestamp: Date.now(),
+      });
+    },
+  });
+
+  const handleSend = (content: string) => {
     const sessionId = currentSessionId ?? createNewSession();
 
     const userMessage = {
@@ -20,30 +48,7 @@ export const ChatWindow = () => {
     };
 
     addMessage(sessionId, userMessage);
-    setIsLoading(true);
-
-    try {
-      const response = await generateChatResponse([
-        ...(currentSession?.messages ?? []),
-        userMessage,
-      ]);
-
-      addMessage(sessionId, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: response,
-        timestamp: Date.now(),
-      });
-    } catch (error: any) {
-      addMessage(sessionId, {
-        id: crypto.randomUUID(),
-        role: 'assistant',
-        content: `Error: ${error.message ?? 'Unable to fetch response.'}`,
-        timestamp: Date.now(),
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    mutation.mutate([...(currentSession?.messages ?? []), userMessage]);
   };
 
   return (
@@ -57,7 +62,7 @@ export const ChatWindow = () => {
             <MessageBubble key={message.id} message={message} />
           ))
         )}
-        {isLoading && <p className="loading">Lumina is typing...</p>}
+        {mutation.isPending && <p className="loading">Lumina is typing...</p>}
       </section>
       <footer className="footer">
         <ChatInput onSend={handleSend} />
