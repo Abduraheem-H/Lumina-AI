@@ -59,18 +59,28 @@ export const ChatWindow = () => {
   };
 
   return (
-    <div className="main">
-      <header className="header">{currentSession?.title ?? 'New Chat'}</header>
-      <section className="content messages">
+    <div className="flex-1 flex flex-col h-screen bg-brand-bg">
+      <header className="h-16 border-b border-brand-border flex items-center px-6 bg-brand-bg/50">
+        <h2 className="text-sm font-medium opacity-80">
+          {currentSession?.title ?? 'New Chat'}
+        </h2>
+      </header>
+
+      <div className="flex-1 overflow-y-auto">
         {!currentSession || currentSession.messages.length === 0 ? (
-          <div className="empty-state">
-            <h3>How can I help you today?</h3>
-            <p>Ask questions, generate content, or explore new ideas.</p>
-            <div className="suggestions">
+          <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+            <h3 className="text-2xl font-semibold tracking-tight mb-2">
+              How can I help you today?
+            </h3>
+            <p className="text-brand-muted max-w-md text-sm leading-relaxed">
+              Ask questions, generate content, or explore new ideas.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10 w-full max-w-2xl">
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion}
                   onClick={() => handleSend(suggestion)}
+                  className="p-4 bg-white/5 border border-white/10 rounded-2xl text-left text-xs hover:bg-white/10 hover:border-white/20 transition-all"
                 >
                   {suggestion}
                 </button>
@@ -78,15 +88,21 @@ export const ChatWindow = () => {
             </div>
           </div>
         ) : (
-          currentSession.messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))
+          <div className="max-w-4xl mx-auto w-full py-4">
+            {currentSession.messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+
+            {mutation.isPending && (
+              <div className="px-6 py-4 text-xs text-brand-muted">Lumina is typing...</div>
+            )}
+          </div>
         )}
-        {mutation.isPending && <p className="loading">Lumina is typing...</p>}
-      </section>
-      <footer className="footer">
-        <ChatInput onSend={handleSend} />
-      </footer>
+      </div>
+
+      <div className="bg-gradient-to-t from-brand-bg via-brand-bg to-transparent pt-12">
+        <ChatInput onSend={handleSend} isLoading={mutation.isPending} />
+      </div>
     </div>
   );
 };

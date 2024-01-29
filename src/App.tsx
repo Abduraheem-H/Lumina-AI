@@ -8,7 +8,7 @@ const queryClient = new QueryClient();
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="app-shell">
+      <div className="flex h-screen w-full overflow-hidden font-sans">
         <Sidebar />
         <ChatWindow />
       </div>

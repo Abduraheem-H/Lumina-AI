@@ -1,27 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { cn } from '../lib/utils';
 
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (content: string) => void;
+  isLoading: boolean;
 }
 
-export const ChatInput = ({ onSend }: ChatInputProps) => {
-  const [value, setValue] = useState('');
+export const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
+  const [content, setContent] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
-    if (value.trim()) {
-      onSend(value.trim());
-      setValue('');
+    if (content.trim() && !isLoading) {
+      onSend(content.trim());
+      setContent('');
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    }
+  }, [content]);
+
   return (
-    <div className="chat-input">
-      <input
-        value={value}
-        onChange={(event) => setValue(event.target.value)}
-        placeholder="Type a message"
-      />
-      <button onClick={handleSend}>Send</button>
+    <div className="p-4 max-w-4xl mx-auto w-full">
+      <div className="relative bg-brand-surface border border-brand-border rounded-2xl p-2 shadow-2xl">
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Message Lumina..."
+          className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm max-h-[200px] min-h-[44px]"
+          rows={1}
+        />
+        <div className="flex items-center justify-between px-2 pb-1">
+          <div className="text-[10px] text-brand-muted">Shift+Enter for new line</div>
+          <button
+            onClick={handleSend}
+            disabled={!content.trim() || isLoading}
+            className={cn(
+              'px-3 py-2 rounded-xl text-xs transition-all',
+              content.trim() && !isLoading
+                ? 'bg-white text-black hover:bg-white/90'
+                : 'bg-white/5 text-brand-muted cursor-not-allowed',
+            )}
+          >
+            Send
+          </button>
+        </div>
+      </div>
+      <p className="text-[10px] text-center mt-3 text-brand-muted">
+        Lumina can make mistakes. Check important info.
+      </p>
     </div>
   );
 };
