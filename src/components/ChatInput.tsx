@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Paperclip, Mic, ArrowUp } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface ChatInputProps {
@@ -33,7 +34,7 @@ export const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
 
   return (
     <div className="p-4 max-w-4xl mx-auto w-full">
-      <div className="relative bg-brand-surface border border-brand-border rounded-2xl p-2 shadow-2xl">
+      <div className="relative bg-brand-surface border border-brand-border rounded-2xl p-2 shadow-2xl focus-within:border-white/20 transition-all">
         <textarea
           ref={textareaRef}
           value={content}
@@ -43,19 +44,28 @@ export const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm max-h-[200px] min-h-[44px]"
           rows={1}
         />
+
         <div className="flex items-center justify-between px-2 pb-1">
-          <div className="text-[10px] text-brand-muted">Shift+Enter for new line</div>
+          <div className="flex items-center gap-1">
+            <button className="p-2 hover:bg-white/5 rounded-lg text-brand-muted hover:text-white transition-all">
+              <Paperclip size={18} />
+            </button>
+            <button className="p-2 hover:bg-white/5 rounded-lg text-brand-muted hover:text-white transition-all">
+              <Mic size={18} />
+            </button>
+          </div>
+
           <button
             onClick={handleSend}
             disabled={!content.trim() || isLoading}
             className={cn(
-              'px-3 py-2 rounded-xl text-xs transition-all',
+              'p-2 rounded-xl transition-all',
               content.trim() && !isLoading
                 ? 'bg-white text-black hover:bg-white/90'
                 : 'bg-white/5 text-brand-muted cursor-not-allowed',
             )}
           >
-            Send
+            <ArrowUp size={20} />
           </button>
         </div>
       </div>
