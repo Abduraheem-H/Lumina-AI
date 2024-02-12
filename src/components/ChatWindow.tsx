@@ -5,6 +5,7 @@ import { ChatInput } from './ChatInput';
 import { generateChatResponse } from '../services/gemini';
 import { useMutation } from '@tanstack/react-query';
 import { PanelLeftOpen, Sparkles } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const suggestions = [
   'Write a professional email for a job application',
@@ -103,25 +104,42 @@ export const ChatWindow = () => {
       <div ref={scrollRef} className="flex-1 overflow-y-auto scroll-smooth">
         {!currentSession || currentSession.messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-6 border border-white/10"
+            >
               <Sparkles size={32} className="text-white" />
-            </div>
-            <h3 className="text-2xl font-semibold tracking-tight mb-2">
+            </motion.div>
+            <motion.h3
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-2xl font-semibold tracking-tight mb-2"
+            >
               How can I help you today?
-            </h3>
-            <p className="text-brand-muted max-w-md text-sm leading-relaxed">
+            </motion.h3>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="text-brand-muted max-w-md text-sm leading-relaxed"
+            >
               Ask questions, generate content, or explore ideas with Lumina.
-            </p>
+            </motion.p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-12 w-full max-w-2xl">
-              {suggestions.map((suggestion) => (
-                <button
+              {suggestions.map((suggestion, i) => (
+                <motion.button
                   key={suggestion}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 + i * 0.1 }}
                   onClick={() => handleSend(suggestion)}
                   className="p-4 bg-white/5 border border-white/10 rounded-2xl text-left text-xs hover:bg-white/10 hover:border-white/20 transition-all"
                 >
                   {suggestion}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
