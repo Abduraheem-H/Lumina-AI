@@ -1,17 +1,25 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { generateChatResponse } from '../services/gemini';
 import { useMutation } from '@tanstack/react-query';
-import { PanelLeftOpen, Sparkles } from 'lucide-react';
+import { PanelLeftOpen, Sparkles, Download, FileText, FileJson, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { format } from 'date-fns';
 
 const suggestions = [
   'Write a professional email for a job application',
   'Explain quantum computing in simple terms',
   'Create a 7-day workout plan for beginners',
   'Help me debug a React useEffect loop',
+];
+
+const quickPrompts = [
+  'Summarize the last response',
+  'Draft a follow-up email',
+  'Create a bullet summary',
+  'Give me a step-by-step plan',
 ];
 
 export const ChatWindow = () => {
@@ -25,8 +33,11 @@ export const ChatWindow = () => {
   } = useChatStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
 
   const currentSession = sessions.find((s) => s.id === currentSessionId);
+  const canExport = Boolean(currentSession && currentSession.messages.length > 0);
 
   const mutation = useMutation({
     mutationFn: async (messages: any[]) => generateChatResponse(messages),
@@ -78,6 +89,87 @@ export const ChatWindow = () => {
     }
   }, [currentSession?.messages, mutation.isPending]);
 
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+      const isModifier = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+      if (isModifier && key === 'b') {
+        event.preventDefault();
+        setSidebarOpen(!isSidebarOpen);
+      }
+      if (isModifier && event.shiftKey && key === 'n') {
+        event.preventDefault();
+        createNewSession();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [createNewSession, isSidebarOpen, setSidebarOpen]);
+
+  useEffect(() => {
+    if (!isExportOpen) {
+      return;
+    }
+    const handleClick = (event: MouseEvent) => {
+      if (!exportMenuRef.current?.contains(event.target as Node)) {
+        setIsExportOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isExportOpen]);
+
+  const handleExport = (formatType: 'md' | 'json') => {
+    if (!currentSession) {
+      return;
+    }
+    const title = currentSession.title || 'lumina-chat';
+    const safeTitle =
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '') || 'lumina-chat';
+    const stamp = format(new Date(), 'yyyy-MM-dd');
+    const filename = `${safeTitle}-${stamp}.${formatType}`;
+
+    if (formatType === 'json') {
+      const blob = new Blob([JSON.stringify(currentSession, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setIsExportOpen(false);
+      return;
+    }
+
+    const lines = currentSession.messages.map((message) => {
+      const role = message.role === 'user' ? 'You' : 'Lumina';
+      const time = Number.isFinite(message.timestamp)
+        ? format(new Date(message.timestamp), 'PPpp')
+        : '';
+      return `### ${role}${time ? ` · ${time}` : ''}\n\n${message.content}\n`;
+    });
+    const markdown = `# ${title}\n\nGenerated: ${format(new Date(), 'PPpp')}\n\n${lines.join('\n')}`.trim();
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsExportOpen(false);
+  };
+
   return (
     <div className="flex-1 flex flex-col h-screen bg-brand-bg relative overflow-hidden">
       <header className="h-16 border-b border-brand-border flex items-center px-6 justify-between bg-brand-bg/50 backdrop-blur-md z-10">
@@ -95,8 +187,50 @@ export const ChatWindow = () => {
           </h2>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => createNewSession()}
+            className="p-2 rounded-lg border border-white/10 text-brand-muted hover:text-white hover:bg-white/5 transition-all"
+            title="New chat (Ctrl/Cmd+Shift+N)"
+          >
+            <Plus size={16} />
+          </button>
+          <div ref={exportMenuRef} className="relative">
+            <button
+              onClick={() => canExport && setIsExportOpen((open) => !open)}
+              disabled={!canExport}
+              className="p-2 rounded-lg border border-white/10 text-brand-muted hover:text-white hover:bg-white/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Export chat"
+            >
+              <Download size={16} />
+            </button>
+            <AnimatePresence>
+              {isExportOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  className="absolute right-0 mt-2 w-44 rounded-xl border border-white/10 bg-brand-surface shadow-xl p-2 z-20"
+                >
+                  <button
+                    onClick={() => handleExport('md')}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg"
+                  >
+                    <FileText size={14} />
+                    Export Markdown
+                  </button>
+                  <button
+                    onClick={() => handleExport('json')}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg"
+                  >
+                    <FileJson size={14} />
+                    Export JSON
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-medium tracking-wider uppercase opacity-60">
-            Gemini 3 Flash
+            Lumina
           </div>
         </div>
       </header>
@@ -168,7 +302,11 @@ export const ChatWindow = () => {
       </div>
 
       <div className="bg-gradient-to-t from-brand-bg via-brand-bg to-transparent pt-12">
-        <ChatInput onSend={handleSend} isLoading={mutation.isPending} />
+        <ChatInput
+          onSend={handleSend}
+          isLoading={mutation.isPending}
+          presets={quickPrompts}
+        />
       </div>
     </div>
   );

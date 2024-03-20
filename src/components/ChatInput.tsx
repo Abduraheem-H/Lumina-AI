@@ -5,9 +5,10 @@ import { cn } from '../lib/utils';
 interface ChatInputProps {
   onSend: (content: string) => void;
   isLoading: boolean;
+  presets?: string[];
 }
 
-export const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
+export const ChatInput = ({ onSend, isLoading, presets = [] }: ChatInputProps) => {
   const [content, setContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -32,6 +33,11 @@ export const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
     }
   }, [content]);
 
+  const handlePresetClick = (preset: string) => {
+    setContent(preset);
+    textareaRef.current?.focus();
+  };
+
   return (
     <div className="p-4 max-w-4xl mx-auto w-full">
       <div className="relative bg-brand-surface border border-brand-border rounded-2xl p-2 shadow-2xl focus-within:border-white/20 transition-all">
@@ -44,6 +50,20 @@ export const ChatInput = ({ onSend, isLoading }: ChatInputProps) => {
           className="w-full bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-sm max-h-[200px] min-h-[44px]"
           rows={1}
         />
+
+        {presets.length > 0 && content.trim().length === 0 && (
+          <div className="flex flex-wrap gap-2 px-3 pb-2">
+            {presets.map((preset) => (
+              <button
+                key={preset}
+                onClick={() => handlePresetClick(preset)}
+                className="px-3 py-1 rounded-full text-[10px] border border-white/10 text-brand-muted hover:text-white hover:border-white/20 transition-all"
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between px-2 pb-1">
           <div className="flex items-center gap-1">
