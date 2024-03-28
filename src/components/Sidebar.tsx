@@ -7,6 +7,7 @@ import {
   PanelLeftClose,
   Pencil,
   Search,
+  X,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { format } from 'date-fns';
@@ -22,9 +23,13 @@ export const Sidebar = () => {
     deleteSession,
     clearAllSessions,
     updateSessionTitle,
+    promptTemplates,
+    addPromptTemplate,
+    removePromptTemplate,
   } = useChatStore();
 
   const [query, setQuery] = useState('');
+  const [templateInput, setTemplateInput] = useState('');
 
   const filteredSessions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -129,7 +134,45 @@ export const Sidebar = () => {
         )}
       </div>
 
-      <div className="p-4 border-t border-brand-border space-y-4">
+      <div className="px-4 py-4 border-t border-brand-border space-y-4">
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-brand-muted">
+            Prompt Templates
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={templateInput}
+              onChange={(event) => setTemplateInput(event.target.value)}
+              placeholder="Add a quick prompt"
+              className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-brand-muted focus:outline-none"
+            />
+            <button
+              onClick={() => {
+                if (templateInput.trim()) {
+                  addPromptTemplate(templateInput);
+                  setTemplateInput('');
+                }
+              }}
+              className="px-3 py-2 rounded-lg bg-white/10 text-xs text-white hover:bg-white/20 transition-all"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {promptTemplates.map((template) => (
+              <button
+                key={template}
+                onClick={() => removePromptTemplate(template)}
+                className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 text-[10px] text-white/80 hover:text-white hover:bg-white/10 transition-all"
+                title="Remove template"
+              >
+                <span className="truncate max-w-[140px]">{template}</span>
+                <X size={12} />
+              </button>
+            ))}
+          </div>
+        </div>
+
         <button
           onClick={() => {
             if (confirm('Are you sure you want to clear all chat history?')) {

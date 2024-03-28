@@ -4,23 +4,19 @@ import { MessageBubble } from './MessageBubble';
 import { ChatInput } from './ChatInput';
 import { generateChatResponse } from '../services/gemini';
 import { useMutation } from '@tanstack/react-query';
-import { PanelLeftOpen, Sparkles, Download, FileText, FileJson, Plus } from 'lucide-react';
+import {
+  PanelLeftOpen,
+  Sparkles,
+  Download,
+  FileText,
+  FileJson,
+  Plus,
+  RotateCcw,
+  Sun,
+  Moon,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { format } from 'date-fns';
-
-const suggestions = [
-  'Write a professional email for a job application',
-  'Explain quantum computing in simple terms',
-  'Create a 7-day workout plan for beginners',
-  'Help me debug a React useEffect loop',
-];
-
-const quickPrompts = [
-  'Summarize the last response',
-  'Draft a follow-up email',
-  'Create a bullet summary',
-  'Give me a step-by-step plan',
-];
 
 export const ChatWindow = () => {
   const {
@@ -30,6 +26,9 @@ export const ChatWindow = () => {
     isSidebarOpen,
     setSidebarOpen,
     createNewSession,
+    promptTemplates,
+    theme,
+    toggleTheme,
   } = useChatStore();
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -37,7 +36,27 @@ export const ChatWindow = () => {
   const [isExportOpen, setIsExportOpen] = useState(false);
 
   const currentSession = sessions.find((s) => s.id === currentSessionId);
-  const canExport = Boolean(currentSession && currentSession.messages.length > 0);
+  const canExportChat = Boolean(currentSession && currentSession.messages.length > 0);
+  const canExportWorkspace = sessions.length > 0;
+  const canOpenExport = canExportChat || canExportWorkspace;
+  const promptSuggestions =
+    promptTemplates.length > 0
+      ? promptTemplates.slice(0, 4)
+      : [
+          'Write a professional email for a job application',
+          'Explain quantum computing in simple terms',
+          'Create a 7-day workout plan for beginners',
+          'Help me debug a React useEffect loop',
+        ];
+  const lastUserIndex = currentSession
+    ? currentSession.messages.reduce(
+        (latestIndex, message, index) =>
+          message.role === 'user' ? index : latestIndex,
+        -1,
+      )
+    : -1;
+  const lastUserMessage =
+    currentSession && lastUserIndex >= 0 ? currentSession.messages[lastUserIndex] : null;
 
   const mutation = useMutation({
     mutationFn: async (messages: any[]) => generateChatResponse(messages),
@@ -63,6 +82,8 @@ export const ChatWindow = () => {
     },
   });
 
+  const canRegenerate = Boolean(lastUserMessage) && !mutation.isPending;
+
   const handleSend = (content: string) => {
     let sessionId = currentSessionId;
 
@@ -81,6 +102,14 @@ export const ChatWindow = () => {
 
     const updatedMessages = [...(currentSession?.messages || []), userMessage];
     mutation.mutate(updatedMessages);
+  };
+
+  const handleRegenerate = () => {
+    if (!currentSession || lastUserIndex < 0) {
+      return;
+    }
+    const history = currentSession.messages.slice(0, lastUserIndex + 1);
+    mutation.mutate(history);
   };
 
   useEffect(() => {
@@ -126,7 +155,7 @@ export const ChatWindow = () => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [isExportOpen]);
 
-  const handleExport = (formatType: 'md' | 'json') => {
+  const handleExportChat = (formatType: 'md' | 'json') => {
     if (!currentSession) {
       return;
     }
@@ -157,9 +186,65 @@ export const ChatWindow = () => {
       const time = Number.isFinite(message.timestamp)
         ? format(new Date(message.timestamp), 'PPpp')
         : '';
-      return `### ${role}${time ? ` · ${time}` : ''}\n\n${message.content}\n`;
+      return `### ${role}${time ? ` - ${time}` : ''}\n\n${message.content}\n`;
     });
     const markdown = `# ${title}\n\nGenerated: ${format(new Date(), 'PPpp')}\n\n${lines.join('\n')}`.trim();
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    setIsExportOpen(false);
+  };
+
+  const handleExportWorkspace = (formatType: 'md' | 'json') => {
+    if (sessions.length === 0) {
+      return;
+    }
+    const stamp = format(new Date(), 'yyyy-MM-dd');
+    const filename = `lumina-workspace-${stamp}.${formatType}`;
+
+    if (formatType === 'json') {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        sessions,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      setIsExportOpen(false);
+      return;
+    }
+
+    const workspaceContent = sessions
+      .map((session) => {
+        const header = `## ${session.title || 'Untitled Chat'}`;
+        if (session.messages.length === 0) {
+          return `${header}\n\n_No messages yet._\n`;
+        }
+        const messages = session.messages
+          .map((message) => {
+            const role = message.role === 'user' ? 'You' : 'Lumina';
+            const time = Number.isFinite(message.timestamp)
+              ? format(new Date(message.timestamp), 'PPpp')
+              : '';
+            return `### ${role}${time ? ` - ${time}` : ''}\n\n${message.content}\n`;
+          })
+          .join('\n');
+        return `${header}\n\n${messages}`;
+      })
+      .join('\n');
+
+    const markdown = `# Lumina Workspace\n\nGenerated: ${format(
+      new Date(),
+      'PPpp',
+    )}\n\n${workspaceContent}`.trim();
     const blob = new Blob([markdown], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -194,10 +279,18 @@ export const ChatWindow = () => {
           >
             <Plus size={16} />
           </button>
+          <button
+            onClick={handleRegenerate}
+            disabled={!canRegenerate}
+            className="p-2 rounded-lg border border-white/10 text-brand-muted hover:text-white hover:bg-white/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Regenerate last response"
+          >
+            <RotateCcw size={16} />
+          </button>
           <div ref={exportMenuRef} className="relative">
             <button
-              onClick={() => canExport && setIsExportOpen((open) => !open)}
-              disabled={!canExport}
+              onClick={() => canOpenExport && setIsExportOpen((open) => !open)}
+              disabled={!canOpenExport}
               className="p-2 rounded-lg border border-white/10 text-brand-muted hover:text-white hover:bg-white/5 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               title="Export chat"
             >
@@ -212,23 +305,49 @@ export const ChatWindow = () => {
                   className="absolute right-0 mt-2 w-44 rounded-xl border border-white/10 bg-brand-surface shadow-xl p-2 z-20"
                 >
                   <button
-                    onClick={() => handleExport('md')}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg"
+                    onClick={() => handleExportChat('md')}
+                    disabled={!canExportChat}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <FileText size={14} />
-                    Export Markdown
+                    Export Chat (MD)
                   </button>
                   <button
-                    onClick={() => handleExport('json')}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg"
+                    onClick={() => handleExportChat('json')}
+                    disabled={!canExportChat}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <FileJson size={14} />
-                    Export JSON
+                    Export Chat (JSON)
+                  </button>
+                  <div className="my-1 h-px bg-white/10" />
+                  <button
+                    onClick={() => handleExportWorkspace('md')}
+                    disabled={!canExportWorkspace}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <FileText size={14} />
+                    Export Workspace (MD)
+                  </button>
+                  <button
+                    onClick={() => handleExportWorkspace('json')}
+                    disabled={!canExportWorkspace}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-xs text-white/80 hover:text-white hover:bg-white/5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <FileJson size={14} />
+                    Export Workspace (JSON)
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg border border-white/10 text-brand-muted hover:text-white hover:bg-white/5 transition-all"
+            title="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
           <div className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-medium tracking-wider uppercase opacity-60">
             Lumina
           </div>
@@ -263,7 +382,7 @@ export const ChatWindow = () => {
             </motion.p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-12 w-full max-w-2xl">
-              {suggestions.map((suggestion, i) => (
+              {promptSuggestions.map((suggestion, i) => (
                 <motion.button
                   key={suggestion}
                   initial={{ opacity: 0, scale: 0.95 }}
@@ -305,7 +424,7 @@ export const ChatWindow = () => {
         <ChatInput
           onSend={handleSend}
           isLoading={mutation.isPending}
-          presets={quickPrompts}
+          presets={promptTemplates}
         />
       </div>
     </div>

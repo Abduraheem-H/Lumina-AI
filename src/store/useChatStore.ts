@@ -2,12 +2,27 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ChatSession, Message } from '../types/chat';
 
+type ThemeMode = 'dark' | 'light';
+
+const defaultPromptTemplates = [
+  'Summarize the last response',
+  'Draft a follow-up email',
+  'Create a bullet summary',
+  'Give me a step-by-step plan',
+];
+
 interface ChatState {
   sessions: ChatSession[];
   currentSessionId: string | null;
   isSidebarOpen: boolean;
+  theme: ThemeMode;
+  promptTemplates: string[];
 
   setSidebarOpen: (open: boolean) => void;
+  setTheme: (theme: ThemeMode) => void;
+  toggleTheme: () => void;
+  addPromptTemplate: (template: string) => void;
+  removePromptTemplate: (template: string) => void;
   createNewSession: () => string;
   setCurrentSession: (id: string) => void;
   addMessage: (sessionId: string, message: Message) => void;
@@ -22,8 +37,33 @@ export const useChatStore = create<ChatState>()(
       sessions: [],
       currentSessionId: null,
       isSidebarOpen: true,
+      theme: 'dark',
+      promptTemplates: defaultPromptTemplates,
 
       setSidebarOpen: (open) => set({ isSidebarOpen: open }),
+      setTheme: (theme) => set({ theme }),
+      toggleTheme: () =>
+        set((state) => ({
+          theme: state.theme === 'dark' ? 'light' : 'dark',
+        })),
+      addPromptTemplate: (template) => {
+        const trimmed = template.trim();
+        if (!trimmed) {
+          return;
+        }
+        set((state) => {
+          if (state.promptTemplates.some((item) => item.toLowerCase() === trimmed.toLowerCase())) {
+            return state;
+          }
+          return {
+            promptTemplates: [trimmed, ...state.promptTemplates],
+          };
+        });
+      },
+      removePromptTemplate: (template) =>
+        set((state) => ({
+          promptTemplates: state.promptTemplates.filter((item) => item !== template),
+        })),
 
       createNewSession: () => {
         const newSession: ChatSession = {

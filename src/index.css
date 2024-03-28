@@ -10,6 +10,60 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+:root {
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --color-brand-bg: #f6f7fb;
+  --color-brand-surface: #ffffff;
+  --color-brand-border: rgba(15, 23, 42, 0.12);
+  --color-brand-accent: #0f172a;
+  --color-brand-muted: #64748b;
+  color-scheme: light;
+}
+
+[data-theme="light"] .text-white {
+  color: #0f172a;
+}
+
+[data-theme="light"] .text-white\/80 {
+  color: rgba(15, 23, 42, 0.8);
+}
+
+[data-theme="light"] .bg-white\/5 {
+  background-color: rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .bg-white\/10 {
+  background-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .bg-white\/20 {
+  background-color: rgba(15, 23, 42, 0.16);
+}
+
+[data-theme="light"] .border-white\/10 {
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .border-white\/20 {
+  border-color: rgba(15, 23, 42, 0.2);
+}
+
+[data-theme="light"] .prose-invert {
+  color: #0f172a;
+}
+
+[data-theme="light"] .prose-invert :where(p, li, blockquote, pre, code, h1, h2, h3, h4, h5, h6) {
+  color: #0f172a;
+}
+
+[data-theme="light"] .prose-invert pre {
+  background-color: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
 @layer base {
   body {
     @apply bg-brand-bg text-white antialiased;
